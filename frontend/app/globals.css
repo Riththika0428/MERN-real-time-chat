@@ -1,0 +1,107 @@
+@import "tailwindcss";
+
+/* Enables class-based dark mode (.dark on <html>) instead of the
+   media-query default, so our ThemeToggle button keeps working. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --bg: 247 248 250;
+  --bg-elevated: 255 255 255;
+  --bg-sunken: 238 241 244;
+  --text-primary: 18 21 27;
+  --text-secondary: 91 100 114;
+  --text-tertiary: 137 146 160;
+  --border: 228 231 236;
+  --border-soft: 237 239 242;
+  --accent: 15 184 166;
+  --accent-solid: 10 143 130;
+  --accent-solid-hover: 8 111 101;
+  --accent-tint: 227 248 245;
+  --accent-on: 255 255 255;
+}
+
+.dark {
+  --bg: 11 14 19;
+  --bg-elevated: 18 22 29;
+  --bg-sunken: 14 18 24;
+  --text-primary: 243 245 247;
+  --text-secondary: 155 163 176;
+  --text-tertiary: 107 114 128;
+  --border: 35 41 51;
+  --border-soft: 27 32 40;
+  --accent: 45 224 199;
+  --accent-solid: 31 187 165;
+  --accent-solid-hover: 41 210 187;
+  --accent-tint: 20 43 39;
+  --accent-on: 6 17 15;
+}
+
+/* Maps our semantic CSS-variable tokens into Tailwind v4's theme, so
+   utilities like bg-surface, text-ink, border-border, bg-accent-solid
+   all work and automatically swap on the .dark class. */
+@theme inline {
+  --color-surface: rgb(var(--bg));
+  --color-surface-elevated: rgb(var(--bg-elevated));
+  --color-surface-sunken: rgb(var(--bg-sunken));
+
+  --color-ink: rgb(var(--text-primary));
+  --color-ink-secondary: rgb(var(--text-secondary));
+  --color-ink-tertiary: rgb(var(--text-tertiary));
+
+  --color-border: rgb(var(--border));
+  --color-border-soft: rgb(var(--border-soft));
+
+  --color-accent: rgb(var(--accent));
+  --color-accent-solid: rgb(var(--accent-solid));
+  --color-accent-hover: rgb(var(--accent-solid-hover));
+  --color-accent-tint: rgb(var(--accent-tint));
+  --color-accent-on: rgb(var(--accent-on));
+
+  --font-display: var(--font-display-src);
+  --font-body: var(--font-body-src);
+  --font-mono: var(--font-mono-src);
+
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+
+  --shadow-sm: 0 1px 2px rgb(18 21 27 / 0.04);
+  --shadow-md: 0 4px 16px rgb(18 21 27 / 0.06);
+  --shadow-lg: 0 16px 40px rgb(18 21 27 / 0.10);
+}
+
+* {
+  border-color: rgb(var(--border));
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: rgb(var(--bg));
+  color: rgb(var(--text-primary));
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+::selection {
+  background-color: rgb(var(--accent-tint));
+  color: rgb(var(--accent-solid));
+}
+
+:focus-visible {
+  outline: 2px solid rgb(var(--accent-solid));
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
