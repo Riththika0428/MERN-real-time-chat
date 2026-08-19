@@ -1,6 +1,14 @@
 import { NodeField } from '@/components/hero/node-field';
 
-export function AuthIllustration() {
+interface AuthIllustrationProps {
+  heading?: string;
+  subheading?: string;
+}
+
+export function AuthIllustration({
+  heading = 'Every conversation, right where you left it.',
+  subheading = 'Sign in to pick up your messages, exactly as you left them.',
+}: AuthIllustrationProps) {
   return (
     <div className="relative hidden h-full flex-col justify-between overflow-hidden bg-ink px-12 py-14 dark:bg-surface-elevated dark:border-l dark:border-border lg:flex">
       <NodeField />
@@ -16,14 +24,8 @@ export function AuthIllustration() {
             Always. See you there 👋
           </div>
         </div>
-        <h2 className="font-display text-[26px] font-bold leading-tight text-surface">
-          Every conversation,
-          <br />
-          right where you left it.
-        </h2>
-        <p className="mt-2.5 text-[14px] leading-relaxed text-surface/65 dark:text-ink-secondary">
-          Sign in to pick up your messages, exactly as you left them.
-        </p>
+        <h2 className="font-display text-[26px] font-bold leading-tight text-surface">{heading}</h2>
+        <p className="mt-2.5 text-[14px] leading-relaxed text-surface/65 dark:text-ink-secondary">{subheading}</p>
       </div>
     </div>
   );
