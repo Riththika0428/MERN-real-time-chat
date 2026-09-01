@@ -1,10 +1,13 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/lib/auth-context';
+import { ApiError } from '@/lib/api';
 
 function EyeIcon({ open }: { open: boolean }) {
   return open ? (
@@ -33,19 +36,42 @@ function GoogleIcon() {
 }
 
 export function LoginForm() {
+  const router = useRouter();
+  const { login } = useAuth();
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
     setLoading(true);
-    // TODO: wire up to POST /api/auth/login
-    setTimeout(() => setLoading(false), 800);
+    try {
+      await login(email, password);
+      router.push('/chat');
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Unable to log in. Try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <form onSubmit={handleSubmit} className="w-full max-w-[380px] space-y-5">
-      <Input id="email" name="email" type="email" label="Email" placeholder="you@example.com" autoComplete="email" required />
+      <Input
+        id="email"
+        name="email"
+        type="email"
+        label="Email"
+        placeholder="you@example.com"
+        autoComplete="email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        required
+      />
 
       <Input
         id="password"
@@ -54,6 +80,8 @@ export function LoginForm() {
         label="Password"
         placeholder="••••••••"
         autoComplete="current-password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
         required
         rightAdornment={
           <button
@@ -73,6 +101,8 @@ export function LoginForm() {
           Forgot password?
         </Link>
       </div>
+
+      {error && <p className="text-[13px] font-medium text-rose-500">{error}</p>}
 
       <Button type="submit" variant="solid" size="lg" className="w-full justify-center" disabled={loading}>
         {loading ? 'Signing in…' : 'Log in'}

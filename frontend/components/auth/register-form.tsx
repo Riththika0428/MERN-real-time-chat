@@ -1,12 +1,15 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { PasswordStrength } from '@/components/ui/password-strength';
 import { AvatarUpload } from '@/components/auth/avatar-upload';
+import { useAuth } from '@/lib/auth-context';
+import { ApiError } from '@/lib/api';
 
 function GoogleIcon() {
   return (
@@ -20,30 +23,62 @@ function GoogleIcon() {
 }
 
 export function RegisterForm() {
+  const router = useRouter();
+  const { register } = useAuth();
+
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const passwordsMismatch = confirmPassword.length > 0 && password !== confirmPassword;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (passwordsMismatch || !termsAccepted) return;
+
+    setError(null);
     setLoading(true);
-    // TODO: wire up to POST /api/auth/register
-    setTimeout(() => setLoading(false), 800);
+    try {
+      await register({ username, email, password });
+      router.push('/chat');
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Unable to create account. Try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <form onSubmit={handleSubmit} className="w-full max-w-[380px] space-y-5">
       <AvatarUpload />
 
-      <Input id="fullName" name="fullName" type="text" label="Full name" placeholder="Jordan Diaz" autoComplete="name" required />
+      <Input
+        id="username"
+        name="username"
+        type="text"
+        label="Username"
+        placeholder="jordandiaz"
+        autoComplete="username"
+        value={username}
+        onChange={(e) => setUsername(e.target.value)}
+        required
+      />
 
-      <Input id="username" name="username" type="text" label="Username" placeholder="jordandiaz" autoComplete="username" required />
-
-      <Input id="email" name="email" type="email" label="Email" placeholder="you@example.com" autoComplete="email" required />
+      <Input
+        id="email"
+        name="email"
+        type="email"
+        label="Email"
+        placeholder="you@example.com"
+        autoComplete="email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        required
+      />
 
       <div>
         <Input
@@ -93,6 +128,8 @@ export function RegisterForm() {
           </>
         }
       />
+
+      {error && <p className="text-[13px] font-medium text-rose-500">{error}</p>}
 
       <Button
         type="submit"

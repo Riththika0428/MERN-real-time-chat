@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { Space_Grotesk, Inter, JetBrains_Mono } from 'next/font/google';
 import { ThemeProvider } from '@/components/theme-provider';
 import './globals.css';
+import { AuthProvider } from '@/lib/auth-context';
+
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
@@ -46,8 +48,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
       <body className="font-body">
-        <ThemeProvider>{children}</ThemeProvider>
-      </body>
+  <ThemeProvider>
+    <AuthProvider>{children}</AuthProvider>
+  </ThemeProvider>
+</body>
     </html>
   );
 }
