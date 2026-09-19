@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
-import { apiFetch, ApiError } from './api';
+import { apiFetch, apiUpload, ApiError } from './api';
 import { mapUser } from './adapters';
 import type { ChatUser } from './types';
 
@@ -12,6 +12,8 @@ interface AuthContextValue {
   login: (email: string, password: string) => Promise<void>;
   register: (payload: { username: string; email: string; password: string }) => Promise<void>;
   logout: () => void;
+  updateProfile: (payload: { username?: string; bio?: string }) => Promise<void>;
+  uploadAvatar: (file: File) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -68,8 +70,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   };
 
+  const updateProfile = async (payload: { username?: string; bio?: string }) => {
+    if (!token) return;
+    const res = await apiFetch<{ user: any }>('/api/users/me', {
+      method: 'PATCH',
+      token,
+      body: JSON.stringify(payload),
+    });
+    setUser(mapUser(res.user));
+  };
+
+  const uploadAvatarFn = async (file: File) => {
+    if (!token) return;
+    const formData = new FormData();
+    formData.append('avatar', file);
+    const res = await apiUpload<{ user: any }>('/api/users/me/avatar', formData, token);
+    setUser(mapUser(res.user));
+  };
+
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, login, register, logout }}>
+    <AuthContext.Provider
+      value={{ user, token, isLoading, login, register, logout, updateProfile, uploadAvatar: uploadAvatarFn }}
+    >
       {children}
     </AuthContext.Provider>
   );

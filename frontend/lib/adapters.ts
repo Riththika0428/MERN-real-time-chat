@@ -1,5 +1,6 @@
 import type { ChatUser, Conversation, ChatMessage } from './types';
 import { formatConversationTime, formatDateGroup, formatMessageTime } from './format';
+import { API_URL } from './api';
 
 const PALETTE = ['#0A8F82', '#5B6472', '#8992A0', '#B08A3E', '#7C5CBF', '#2A6F97'];
 
@@ -13,7 +14,6 @@ function initialsFrom(name: string) {
   return parts.slice(0, 2).map((p) => p[0]?.toUpperCase() ?? '').join('') || '?';
 }
 
-// --- Raw shapes as returned by the Express API (see backend models) ---
 export interface RawUser {
   _id: string;
   username: string;
@@ -21,6 +21,8 @@ export interface RawUser {
   avatarUrl?: string;
   isOnline: boolean;
   lastSeen?: string;
+  bio?: string;
+  createdAt?: string;
 }
 
 export interface RawMessage {
@@ -45,10 +47,14 @@ export function mapUser(raw: RawUser): ChatUser {
     id: raw._id,
     name: raw.username,
     username: raw.username,
+    email: raw.email,
+    avatarUrl: raw.avatarUrl ? `${API_URL}${raw.avatarUrl}` : undefined,
     avatarColor: colorFromId(raw._id),
     initials: initialsFrom(raw.username),
     online: raw.isOnline,
     lastSeen: raw.lastSeen ? `Last seen ${new Date(raw.lastSeen).toLocaleString()}` : undefined,
+    bio: raw.bio,
+    joinedAt: raw.createdAt,
   };
 }
 
@@ -61,7 +67,6 @@ export function mapConversation(raw: RawConversation, currentUserId: string): Co
     user,
     lastMessage: raw.lastMessage?.text || (raw.lastMessage?.attachmentUrl ? 'Sent an attachment' : 'Start the conversation'),
     lastMessageTime: formatConversationTime(raw.lastMessageAt),
-    // Not tracked by the backend yet — defaults until conversation flags/unread counts are added server-side.
     unreadCount: 0,
     muted: false,
     favorite: false,
@@ -82,7 +87,6 @@ export function mapMessage(raw: RawMessage, currentUserId: string): ChatMessage 
     fileName: raw.attachmentType !== 'image' ? raw.attachmentUrl?.split('/').pop() : undefined,
     timestamp: formatMessageTime(raw.createdAt),
     dateGroup: formatDateGroup(raw.createdAt),
-    // Read receipts aren't tracked by the backend yet — 'sent' is the only real signal available.
     status: isOwn ? 'sent' : undefined,
   };
 }

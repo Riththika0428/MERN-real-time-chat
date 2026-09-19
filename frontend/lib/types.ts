@@ -5,11 +5,15 @@ export interface ChatUser {
   id: string;
   name: string;
   username: string;
+  email?: string;
+  avatarUrl?: string;
   avatarColor: string;
   initials: string;
   online: boolean;
   lastSeen?: string;
   about?: string;
+  bio?: string;
+  joinedAt?: string;
   isGroup?: boolean;
   memberCount?: number;
 }
@@ -22,7 +26,7 @@ export interface Reaction {
 
 export interface ChatMessage {
   id: string;
-  senderId: string; // 'me' or a ChatUser id
+  senderId: string;
   type: 'text' | 'image' | 'file' | 'link';
   text?: string;
   imageUrl?: string;
@@ -30,7 +34,7 @@ export interface ChatMessage {
   fileSize?: string;
   link?: { title: string; description: string; domain: string };
   timestamp: string;
-  dateGroup: string; // 'Today' | 'Yesterday' | 'Mon, Aug 10'
+  dateGroup: string;
   status?: MessageStatus;
   reactions?: Reaction[];
   edited?: boolean;
