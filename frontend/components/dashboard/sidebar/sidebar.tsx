@@ -7,7 +7,9 @@ import { ThemeToggle } from '@/components/theme-toggle';
 import { ConversationItem } from './conversation-item';
 import { NoConversations, NoSearchResults } from './empty-states';
 import { NewConversationModal } from './new-conversation-modal';
+import { NewGroupModal } from './new-group-modal';
 import { useAuth } from '@/lib/auth-context';
+import { useClickOutside } from '@/lib/hooks';
 import type { Conversation, NavTab } from '@/lib/types';
 
 const tabs: { id: NavTab; label: string }[] = [
@@ -39,7 +41,10 @@ export function Sidebar({
 }: SidebarProps) {
   const { user } = useAuth();
   const [query, setQuery] = useState('');
+  const [showNewMenu, setShowNewMenu] = useState(false);
   const [showNewConversation, setShowNewConversation] = useState(false);
+  const [showNewGroup, setShowNewGroup] = useState(false);
+  const newMenuRef = useClickOutside<HTMLDivElement>(() => setShowNewMenu(false));
 
   const filtered = conversations
     .filter((c) => {
@@ -57,15 +62,48 @@ export function Sidebar({
         <Logo size={24} />
         <div className="flex items-center gap-1.5">
           <ThemeToggle />
-          <button
-            onClick={() => setShowNewConversation(true)}
-            aria-label="New conversation"
-            className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-border bg-surface-elevated text-ink hover:border-ink-tertiary"
-          >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-[18px] w-[18px]">
-              <path d="M12 5v14M5 12h14" />
-            </svg>
-          </button>
+          <div className="relative" ref={newMenuRef}>
+            <button
+              onClick={() => setShowNewMenu((v) => !v)}
+              aria-label="New conversation"
+              className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-border bg-surface-elevated text-ink hover:border-ink-tertiary"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-[18px] w-[18px]">
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+            </button>
+            {showNewMenu && (
+              <div className="absolute right-0 top-11 z-20 w-52 overflow-hidden rounded-lg border border-border bg-surface-elevated py-1 shadow-lg">
+                <button
+                  onClick={() => {
+                    setShowNewMenu(false);
+                    setShowNewConversation(true);
+                  }}
+                  className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-[13px] text-ink hover:bg-surface-sunken"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4">
+                    <path d="M4 4h16v12H8l-4 4V4z" />
+                  </svg>
+                  New conversation
+                </button>
+                <button
+                  onClick={() => {
+                    setShowNewMenu(false);
+                    setShowNewGroup(true);
+                  }}
+                  className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-left text-[13px] text-ink hover:bg-surface-sunken"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-4 w-4">
+                    <circle cx="9" cy="8" r="3" />
+                    <path d="M2.5 19c0-3 2.9-5 6.5-5s6.5 2 6.5 5" />
+                    <circle cx="17" cy="8.5" r="2.4" />
+                    <path d="M15.5 14.2c2.7.4 4.5 2 4.5 4.8" />
+                  </svg>
+                  New group
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -114,7 +152,7 @@ export function Sidebar({
 
       {user && (
         <div className="flex items-center gap-2.5 border-t border-border-soft px-4 py-3.5">
-          <Avatar initials={user.initials} color={user.avatarColor} online size={36} />
+          <Avatar initials={user.initials} color={user.avatarColor} avatarUrl={user.avatarUrl} online size={36} />
           <div className="min-w-0 flex-1">
             <div className="truncate text-[13px] font-semibold text-ink">{user.name}</div>
             <div className="truncate font-mono text-[11px] text-accent-solid">Online</div>
@@ -135,6 +173,8 @@ export function Sidebar({
           onCreated={onConversationCreated}
         />
       )}
+
+      {showNewGroup && <NewGroupModal onClose={() => setShowNewGroup(false)} onCreated={onConversationCreated} />}
     </div>
   );
 }

@@ -17,7 +17,13 @@ export function ChatHeader({ user, isTyping, onBack, onOpenProfile, onSearch }: 
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useClickOutside<HTMLDivElement>(() => setMenuOpen(false));
 
-  const statusText = isTyping ? 'typing…' : user.online ? 'Online' : user.lastSeen || 'Offline';
+  const statusText = isTyping
+    ? 'typing…'
+    : user.isGroup
+      ? `${user.memberCount ?? user.members?.length ?? 0} members`
+      : user.online
+        ? 'Online'
+        : user.lastSeen || 'Offline';
 
   return (
     <div className="flex items-center gap-3 border-b border-border-soft bg-surface px-4 py-3 sm:px-6">
@@ -30,7 +36,7 @@ export function ChatHeader({ user, isTyping, onBack, onOpenProfile, onSearch }: 
       )}
 
       <button onClick={onOpenProfile} className="flex min-w-0 flex-1 items-center gap-3 text-left">
-        <Avatar initials={user.initials} color={user.avatarColor} online={user.online} isGroup={user.isGroup} size={38} />
+        <Avatar initials={user.initials} color={user.avatarColor} avatarUrl={user.avatarUrl} online={user.online} isGroup={user.isGroup} size={38} />
         <div className="min-w-0">
           <p className="truncate text-[14.5px] font-semibold text-ink">{user.name}</p>
           <p className={`truncate text-[12px] ${isTyping ? 'text-accent-solid' : 'text-ink-tertiary'}`}>{statusText}</p>
@@ -65,12 +71,14 @@ export function ChatHeader({ user, isTyping, onBack, onOpenProfile, onSearch }: 
           </button>
           {menuOpen && (
             <div className="absolute right-0 top-11 z-20 w-52 overflow-hidden rounded-lg border border-border bg-surface-elevated py-1 shadow-lg">
-              {['View profile', 'Mute notifications', 'Search in chat', 'Block user'].map((label) => (
+              {(user.isGroup ? ['View group info', 'Mute notifications', 'Search in chat'] : ['View profile', 'Mute notifications', 'Search in chat', 'Block user']).map((label) => (
                 <button key={label} className="block w-full px-3.5 py-2 text-left text-[13px] text-ink hover:bg-surface-sunken">
                   {label}
                 </button>
               ))}
-              <button className="block w-full px-3.5 py-2 text-left text-[13px] text-rose-500 hover:bg-rose-500/10">Delete conversation</button>
+              <button className="block w-full px-3.5 py-2 text-left text-[13px] text-rose-500 hover:bg-rose-500/10">
+                {user.isGroup ? 'Leave group' : 'Delete conversation'}
+              </button>
             </div>
           )}
         </div>

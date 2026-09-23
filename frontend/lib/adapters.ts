@@ -38,6 +38,11 @@ export interface RawMessage {
 export interface RawConversation {
   _id: string;
   participants: RawUser[];
+  isGroup?: boolean;
+  groupName?: string;
+  groupDescription?: string;
+  groupAvatarUrl?: string;
+  admins?: { _id: string }[];
   lastMessage?: RawMessage | null;
   lastMessageAt: string;
 }
@@ -59,6 +64,37 @@ export function mapUser(raw: RawUser): ChatUser {
 }
 
 export function mapConversation(raw: RawConversation, currentUserId: string): Conversation {
+  if (raw.isGroup) {
+    const members = raw.participants.map(mapUser);
+    const adminIds = (raw.admins ?? []).map((a) => a._id);
+
+    const groupUser: ChatUser = {
+      id: raw._id,
+      name: raw.groupName || 'Group',
+      username: 'group',
+      avatarUrl: raw.groupAvatarUrl ? `${API_URL}${raw.groupAvatarUrl}` : undefined,
+      avatarColor: colorFromId(raw._id),
+      initials: initialsFrom(raw.groupName || 'Group'),
+      online: members.some((m) => m.id !== currentUserId && m.online),
+      isGroup: true,
+      memberCount: members.length,
+      description: raw.groupDescription,
+      members,
+      adminIds,
+    };
+
+    return {
+      id: raw._id,
+      user: groupUser,
+      lastMessage: raw.lastMessage?.text || (raw.lastMessage?.attachmentUrl ? 'Sent an attachment' : 'Group created'),
+      lastMessageTime: formatConversationTime(raw.lastMessageAt),
+      unreadCount: 0,
+      muted: false,
+      favorite: false,
+      archived: false,
+    };
+  }
+
   const otherRaw = raw.participants.find((p) => p._id !== currentUserId) ?? raw.participants[0];
   const user = mapUser(otherRaw);
 

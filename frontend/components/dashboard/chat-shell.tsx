@@ -7,6 +7,7 @@ import { MessageList } from './chat/message-list';
 import { Composer } from './chat/composer';
 import { EmptyChatState, ChatLoadingState } from './chat/empty-chat';
 import { InfoPanel } from './info-panel/info-panel';
+import { GroupInfoPanel } from './info-panel/group-info-panel';
 import { MobileNav, type MobileTab } from './mobile-nav';
 import { ConnectionBanner } from './connection-banner';
 import { apiFetch } from '@/lib/api';
@@ -39,7 +40,6 @@ export function ChatShell() {
 
   const activeConversation = conversations.find((c) => c.id === activeId) ?? null;
 
-  // --- Load conversation list ---
   useEffect(() => {
     if (!user || !token) return;
     setConversationsLoading(true);
@@ -49,7 +49,6 @@ export function ChatShell() {
       .finally(() => setConversationsLoading(false));
   }, [user, token]);
 
-  // --- Load message history + join socket room when conversation changes ---
   useEffect(() => {
     if (!activeId || !token || !user) return;
     setMessagesLoading(true);
@@ -64,25 +63,13 @@ export function ChatShell() {
     };
   }, [activeId, token, user, socket]);
 
-  // --- Socket event listeners (message, typing, presence) ---
   useEffect(() => {
     if (!socket || !user) return;
 
-    // The server broadcasts every sent message to the whole room, including
-    // the sender's own socket. So this is the single place a confirmed
-    // message gets added to state — it either replaces the oldest pending
-    // optimistic message (if this is our own echoed message) or appends a
-    // new incoming message. The send_message ack callback (see handleSend)
-    // only ever marks a message as failed — it never adds the confirmed
-    // message itself, to avoid a duplicate/race with this handler.
     const handleReceive = (raw: RawMessage) => {
       if (raw.conversation !== activeIdRef.current) {
         setConversations((prev) =>
-          prev.map((c) =>
-            c.id === raw.conversation
-              ? { ...c, lastMessage: raw.text || 'Sent an attachment', lastMessageTime: 'Just now' }
-              : c
-          )
+          prev.map((c) => (c.id === raw.conversation ? { ...c, lastMessage: raw.text || 'Sent an attachment', lastMessageTime: 'Just now' } : c))
         );
         return;
       }
@@ -91,7 +78,6 @@ export function ChatShell() {
 
       setMessages((prev) => {
         if (prev.some((m) => m.id === mapped.id)) return prev;
-
         if (mapped.senderId === 'me') {
           const pendingIndex = prev.findIndex((m) => m.senderId === 'me' && m.status === 'sending');
           if (pendingIndex !== -1) {
@@ -100,16 +86,11 @@ export function ChatShell() {
             return next;
           }
         }
-
         return [...prev, mapped];
       });
 
       setConversations((prev) =>
-        prev.map((c) =>
-          c.id === raw.conversation
-            ? { ...c, lastMessage: raw.text || 'Sent an attachment', lastMessageTime: 'Just now' }
-            : c
-        )
+        prev.map((c) => (c.id === raw.conversation ? { ...c, lastMessage: raw.text || 'Sent an attachment', lastMessageTime: 'Just now' } : c))
       );
     };
 
@@ -119,7 +100,6 @@ export function ChatShell() {
     const handleStopTyping = ({ conversationId }: { conversationId: string }) => {
       if (conversationId === activeIdRef.current) setTypingUserId(null);
     };
-
     const handleUserOnline = ({ userId }: { userId: string }) => {
       setConversations((prev) => prev.map((c) => (c.user.id === userId ? { ...c, user: { ...c.user, online: true } } : c)));
     };
@@ -155,6 +135,18 @@ export function ChatShell() {
     handleSelect(conversation.id);
   };
 
+  const handleConversationUpdated = (conversation: Conversation) => {
+    setConversations((prev) => prev.map((c) => (c.id === conversation.id ? conversation : c)));
+  };
+
+  const handleGroupLeft = (conversationId: string) => {
+    setConversations((prev) => prev.filter((c) => c.id !== conversationId));
+    if (activeId === conversationId) {
+      setActiveId(null);
+      setMobileView('list');
+    }
+  };
+
   const handleSend = (text: string) => {
     if (!socket || !activeId) return;
 
@@ -171,10 +163,6 @@ export function ChatShell() {
     setMessages((prev) => [...prev, optimistic]);
     setReplyTo(null);
 
-    // This callback only handles the failure path. On success, the
-    // 'receive_message' broadcast (see handleReceive above) is what
-    // actually confirms and replaces the optimistic message — doing it
-    // here too would race with that event and create duplicate entries.
     socket.emit('send_message', { conversationId: activeId, text }, (res: { success?: boolean; error?: string }) => {
       if (!res?.success) {
         setMessages((prev) => prev.map((m) => (m.id === tempId ? { ...m, status: 'failed' } : m)));
@@ -189,8 +177,6 @@ export function ChatShell() {
     handleSend(failed.text);
   };
 
-  // Reactions / edit / delete are local-only for now — the backend doesn't
-  // yet persist these, so they won't survive a refresh or sync to other devices.
   const handleReact = (messageId: string, emoji: string) => {
     setMessages((prev) =>
       prev.map((m) => {
@@ -268,7 +254,17 @@ export function ChatShell() {
 
         {infoPanelOpen && activeConversation && (
           <div className="hidden w-[320px] shrink-0 lg:block">
-            <InfoPanel user={activeConversation.user} onClose={() => setInfoPanelOpen(false)} />
+            {activeConversation.user.isGroup ? (
+              <GroupInfoPanel
+                conversationId={activeConversation.id}
+                user={activeConversation.user}
+                onClose={() => setInfoPanelOpen(false)}
+                onUpdated={handleConversationUpdated}
+                onLeft={handleGroupLeft}
+              />
+            ) : (
+              <InfoPanel user={activeConversation.user} onClose={() => setInfoPanelOpen(false)} />
+            )}
           </div>
         )}
       </div>

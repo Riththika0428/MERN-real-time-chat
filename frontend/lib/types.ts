@@ -16,6 +16,9 @@ export interface ChatUser {
   joinedAt?: string;
   isGroup?: boolean;
   memberCount?: number;
+  description?: string;
+  members?: ChatUser[];
+  adminIds?: string[];
 }
 
 export interface Reaction {
