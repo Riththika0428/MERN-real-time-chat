@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useSettings } from '@/lib/settings-context';
 import type { ChatMessage } from '@/lib/types';
 
 const EMOJIS = ['😀', '😂', '😍', '👍', '🙏', '🔥', '🎉', '❤️', '😮', '😢', '👏', '🚀'];
@@ -15,6 +16,7 @@ interface ComposerProps {
 }
 
 export function Composer({ onSend, replyTo, onCancelReply, editingMessage, onCancelEdit, onSaveEdit }: ComposerProps) {
+  const { settings } = useSettings();
   const [text, setText] = useState('');
   const [showEmoji, setShowEmoji] = useState(false);
   const [recording, setRecording] = useState(false);
@@ -71,13 +73,16 @@ export function Composer({ onSend, replyTo, onCancelReply, editingMessage, onCan
             value={text}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
+              if (e.key !== 'Enter' || e.shiftKey) return;
+              if (settings.enterToSend) {
                 e.preventDefault();
                 handleSubmit(e);
               }
+              // When enterToSend is off, Enter behaves as a normal newline —
+              // no preventDefault, so the textarea handles it natively.
             }}
             rows={1}
-            placeholder="Type a message…"
+            placeholder={settings.enterToSend ? 'Type a message…' : 'Type a message… (Shift+Enter for newline, click Send)'}
             className="max-h-32 w-full resize-none rounded-[20px] border border-border bg-surface-elevated py-2.5 pl-4 pr-11 text-[13.5px] text-ink placeholder:text-ink-tertiary focus:border-accent-solid focus:outline-none focus:ring-2 focus:ring-accent-tint"
           />
           <div className="absolute bottom-1.5 right-1.5">

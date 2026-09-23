@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 import { Space_Grotesk, Inter, JetBrains_Mono } from 'next/font/google';
 import { ThemeProvider } from '@/components/theme-provider';
-import './globals.css';
 import { AuthProvider } from '@/lib/auth-context';
-
+import { SettingsProvider } from '@/lib/settings-context';
+import './globals.css';
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ['latin'],
@@ -29,12 +29,16 @@ export const metadata: Metadata = {
     'TalkNode is a real-time messaging platform with instant delivery, secure authentication, online presence, and file sharing.',
 };
 
+// Runs before hydration to avoid a flash of the wrong theme. Supports an
+// explicit 'light' / 'dark' preference, or 'system' (and no stored value,
+// which defaults to following the OS setting).
 const themeInitScript = `
 (function () {
   try {
     var stored = window.localStorage.getItem('talknode-theme');
     var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    if (stored === 'dark' || (!stored && prefersDark)) {
+    var shouldBeDark = stored === 'dark' || ((!stored || stored === 'system') && prefersDark);
+    if (shouldBeDark) {
       document.documentElement.classList.add('dark');
     }
   } catch (e) {}
@@ -48,10 +52,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
       <body className="font-body">
-  <ThemeProvider>
-    <AuthProvider>{children}</AuthProvider>
-  </ThemeProvider>
-</body>
+        <ThemeProvider>
+          <SettingsProvider>
+            <AuthProvider>{children}</AuthProvider>
+          </SettingsProvider>
+        </ThemeProvider>
+      </body>
     </html>
   );
 }
