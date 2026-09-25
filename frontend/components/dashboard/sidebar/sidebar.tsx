@@ -27,6 +27,8 @@ interface SidebarProps {
   activeTab: NavTab;
   onTabChange: (tab: NavTab) => void;
   onConversationCreated: (conversation: Conversation) => void;
+  onToggleMute: (id: string) => void;
+  onToggleArchive: (id: string) => void;
   className?: string;
 }
 
@@ -37,6 +39,8 @@ export function Sidebar({
   activeTab,
   onTabChange,
   onConversationCreated,
+  onToggleMute,
+  onToggleArchive,
   className = '',
 }: SidebarProps) {
   const { user } = useAuth();
@@ -144,7 +148,14 @@ export function Sidebar({
         ) : (
           <div className="space-y-0.5">
             {filtered.map((c) => (
-              <ConversationItem key={c.id} conversation={c} active={c.id === activeId} onClick={() => onSelect(c.id)} />
+              <ConversationItem
+                key={c.id}
+                conversation={c}
+                active={c.id === activeId}
+                onClick={() => onSelect(c.id)}
+                onToggleMute={onToggleMute}
+                onToggleArchive={onToggleArchive}
+              />
             ))}
           </div>
         )}

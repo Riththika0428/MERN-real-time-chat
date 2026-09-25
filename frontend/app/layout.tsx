@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Space_Grotesk, Inter, JetBrains_Mono } from 'next/font/google';
 import { ThemeProvider } from '@/components/theme-provider';
 import { AuthProvider } from '@/lib/auth-context';
@@ -29,9 +29,14 @@ export const metadata: Metadata = {
     'TalkNode is a real-time messaging platform with instant delivery, secure authentication, online presence, and file sharing.',
 };
 
-// Runs before hydration to avoid a flash of the wrong theme. Supports an
-// explicit 'light' / 'dark' preference, or 'system' (and no stored value,
-// which defaults to following the OS setting).
+// viewport-fit=cover lets us pad around the iOS notch/home-indicator with
+// env(safe-area-inset-*) in mobile-nav.tsx and anywhere else that needs it.
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
+};
+
 const themeInitScript = `
 (function () {
   try {

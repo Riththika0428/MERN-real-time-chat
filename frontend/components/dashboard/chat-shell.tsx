@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Sidebar } from './sidebar/sidebar';
 import { ChatHeader } from './chat/chat-header';
 import { MessageList } from './chat/message-list';
@@ -10,6 +11,10 @@ import { InfoPanel } from './info-panel/info-panel';
 import { GroupInfoPanel } from './info-panel/group-info-panel';
 import { MobileNav, type MobileTab } from './mobile-nav';
 import { ConnectionBanner } from './connection-banner';
+import { ContactsScreen } from './mobile/contacts-screen';
+import { GroupsScreen } from './mobile/groups-screen';
+import { NotificationsScreen } from './mobile/notifications-screen';
+import { NewGroupModal } from './sidebar/new-group-modal';
 import { apiFetch } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { useSocket } from '@/lib/socket-context';
@@ -19,6 +24,7 @@ import type { ChatMessage, Conversation, NavTab } from '@/lib/types';
 export function ChatShell() {
   const { user, token } = useAuth();
   const { socket, connectionState } = useSocket();
+  const router = useRouter();
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [conversationsLoading, setConversationsLoading] = useState(true);
@@ -34,6 +40,7 @@ export function ChatShell() {
   const [infoPanelOpen, setInfoPanelOpen] = useState(false);
   const [mobileView, setMobileView] = useState<'list' | 'chat'>('list');
   const [mobileTab, setMobileTab] = useState<MobileTab>('chats');
+  const [mobileNewGroupOpen, setMobileNewGroupOpen] = useState(false);
 
   const activeIdRef = useRef(activeId);
   activeIdRef.current = activeId;
@@ -147,6 +154,16 @@ export function ChatShell() {
     }
   };
 
+  // Mute/Archive are local-only flags — the backend has no endpoint for
+  // them yet, but they genuinely drive the existing "Archived" sidebar tab
+  // and the muted icon, so they're functional within the app itself.
+  const handleToggleMute = (id: string) => {
+    setConversations((prev) => prev.map((c) => (c.id === id ? { ...c, muted: !c.muted } : c)));
+  };
+  const handleToggleArchive = (id: string) => {
+    setConversations((prev) => prev.map((c) => (c.id === id ? { ...c, archived: !c.archived } : c)));
+  };
+
   const handleSend = (text: string) => {
     if (!socket || !activeId) return;
 
@@ -198,6 +215,28 @@ export function ChatShell() {
     setEditingMessage(null);
   };
 
+  const handleMobileTabChange = (tab: MobileTab) => {
+    if (tab === 'profile') {
+      router.push('/profile');
+      return;
+    }
+    setMobileTab(tab);
+  };
+
+  const handleStartChatFromContacts = async (userId: string) => {
+    if (!token || !user) return;
+    try {
+      const res = await apiFetch<{ conversation: RawConversation }>('/api/conversations', {
+        method: 'POST',
+        token,
+        body: JSON.stringify({ userId }),
+      });
+      handleConversationCreated(mapConversation(res.conversation, user.id));
+    } catch {
+      // Silently fail here — the user stays on the Contacts screen and can retry.
+    }
+  };
+
   const isTyping = typingUserId === activeConversation?.user.id;
 
   return (
@@ -206,6 +245,7 @@ export function ChatShell() {
       {connectionState === 'disconnected' && <ConnectionBanner status="lost" />}
 
       <div className="flex flex-1 overflow-hidden">
+        {/* Desktop: sidebar always visible. Mobile: only the 'chats' tab shows it, and only in 'list' view. */}
         <Sidebar
           conversations={conversations}
           activeId={activeId}
@@ -213,10 +253,42 @@ export function ChatShell() {
           activeTab={activeTab}
           onTabChange={setActiveTab}
           onConversationCreated={handleConversationCreated}
-          className={`w-full lg:w-[320px] ${mobileView === 'chat' ? 'hidden lg:flex' : 'flex'}`}
+          onToggleMute={handleToggleMute}
+          onToggleArchive={handleToggleArchive}
+          className={`w-full lg:w-[320px] ${
+            mobileView === 'chat' ? 'hidden lg:flex' : mobileTab === 'chats' ? 'flex' : 'hidden lg:flex'
+          }`}
         />
 
-        <div className={`min-w-0 flex-1 flex-col lg:flex ${mobileView === 'chat' ? 'flex' : 'hidden'}`}>
+        {/* Mobile-only alternate tabs, shown when not viewing an open chat */}
+        {mobileView === 'list' && mobileTab === 'contacts' && (
+          <div className="flex w-full lg:hidden">
+            <ContactsScreen onStartChat={handleStartChatFromContacts} />
+          </div>
+        )}
+        {mobileView === 'list' && mobileTab === 'groups' && (
+          <div className="flex w-full lg:hidden">
+            <GroupsScreen
+              conversations={conversations}
+              activeId={activeId}
+              onSelect={handleSelect}
+              onNewGroup={() => setMobileNewGroupOpen(true)}
+              onToggleMute={handleToggleMute}
+              onToggleArchive={handleToggleArchive}
+            />
+          </div>
+        )}
+        {mobileView === 'list' && mobileTab === 'notifications' && (
+          <div className="flex w-full lg:hidden">
+            <NotificationsScreen />
+          </div>
+        )}
+
+        <div
+          className={`min-w-0 flex-1 flex-col lg:flex ${
+            mobileView === 'chat' ? 'flex' : 'hidden'
+          }`}
+        >
           {messagesLoading ? (
             <ChatLoadingState />
           ) : activeConversation ? (
@@ -248,7 +320,9 @@ export function ChatShell() {
               />
             </>
           ) : (
-            <EmptyChatState />
+            <div className="hidden lg:flex lg:flex-1">
+              <EmptyChatState />
+            </div>
           )}
         </div>
 
@@ -269,7 +343,17 @@ export function ChatShell() {
         )}
       </div>
 
-      {mobileView === 'list' && <MobileNav active={mobileTab} onChange={setMobileTab} />}
+      {mobileView === 'list' && <MobileNav active={mobileTab} onChange={handleMobileTabChange} />}
+
+      {mobileNewGroupOpen && (
+        <NewGroupModal
+          onClose={() => setMobileNewGroupOpen(false)}
+          onCreated={(conversation) => {
+            handleConversationCreated(conversation);
+            setMobileNewGroupOpen(false);
+          }}
+        />
+      )}
     </div>
   );
 }
