@@ -1,5 +1,6 @@
+import Link from 'next/link';
 import { Eyebrow } from '@/components/ui/eyebrow';
-import { ButtonLink } from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 import { NodeField } from '@/components/hero/node-field';
 import { AppMockup } from '@/components/hero/app-mockup';
 
@@ -21,12 +22,16 @@ export function Hero() {
             who&apos;s around — so conversations feel like you&apos;re in the same room, even when you&apos;re not.
           </p>
           <div className="mt-[34px] flex flex-wrap gap-3">
-            <ButtonLink href="#get-started" variant="solid" size="lg">
-              Start Chatting
-            </ButtonLink>
-            <ButtonLink href="#features" variant="outline" size="lg">
-              Explore Features
-            </ButtonLink>
+            <Link href="/register">
+              <Button variant="solid" size="lg">
+                Start Chatting
+              </Button>
+            </Link>
+            <a href="#features">
+              <Button variant="outline" size="lg">
+                Explore Features
+              </Button>
+            </a>
           </div>
           <div className="mt-11 flex flex-wrap gap-7 font-mono text-[12.5px] text-ink-tertiary">
             {trustItems.map((item) => (

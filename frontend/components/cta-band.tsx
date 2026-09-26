@@ -1,4 +1,5 @@
-import { ButtonLink } from '@/components/ui/button';
+import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 
 export function CtaBand() {
   return (
@@ -13,9 +14,11 @@ export function CtaBand() {
               Create an account in under a minute — no credit card required.
             </p>
           </div>
-          <ButtonLink href="#get-started" variant="solid" size="lg" className="shrink-0">
-            Get Started Free
-          </ButtonLink>
+          <Link href="/register" className="shrink-0">
+            <Button variant="solid" size="lg">
+              Get Started Free
+            </Button>
+          </Link>
         </div>
       </div>
     </section>

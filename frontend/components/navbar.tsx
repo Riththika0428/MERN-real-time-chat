@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { Logo } from '@/components/ui/logo';
-import { ButtonLink } from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/theme-toggle';
 
 const links = [
@@ -30,12 +31,12 @@ export function Navbar() {
 
         <div className="flex items-center gap-2.5">
           <ThemeToggle />
-          <ButtonLink href="#login" variant="outline" className="hidden md:inline-flex">
-            Log in
-          </ButtonLink>
-          <ButtonLink href="#get-started" variant="solid" className="hidden md:inline-flex">
-            Get Started
-          </ButtonLink>
+          <Link href="/login" className="hidden md:inline-flex">
+            <Button variant="outline">Log in</Button>
+          </Link>
+          <Link href="/register" className="hidden md:inline-flex">
+            <Button variant="solid">Get Started</Button>
+          </Link>
 
           <button
             onClick={() => setMenuOpen((v) => !v)}
@@ -66,12 +67,16 @@ export function Navbar() {
             ))}
           </div>
           <div className="mt-3 flex gap-2 border-t border-border-soft pt-3">
-            <ButtonLink href="#login" variant="outline" className="flex-1 justify-center">
-              Log in
-            </ButtonLink>
-            <ButtonLink href="#get-started" variant="solid" className="flex-1 justify-center">
-              Get Started
-            </ButtonLink>
+            <Link href="/login" className="flex-1" onClick={() => setMenuOpen(false)}>
+              <Button variant="outline" className="w-full justify-center">
+                Log in
+              </Button>
+            </Link>
+            <Link href="/register" className="flex-1" onClick={() => setMenuOpen(false)}>
+              <Button variant="solid" className="w-full justify-center">
+                Get Started
+              </Button>
+            </Link>
           </div>
         </div>
       )}
