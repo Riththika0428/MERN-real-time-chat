@@ -269,7 +269,7 @@ The project will continue to evolve through multiple development phases.
 **Live Application:** Coming soon
 
 **Repository:**
-https://github.com/your-username/talknode
+https://github.com/Riththika0428/MERN-real-time-chat
 
 ---
 
