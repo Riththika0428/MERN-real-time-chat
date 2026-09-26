@@ -266,7 +266,7 @@ The project will continue to evolve through multiple development phases.
 
 ## 🌐 Live Demo
 
-**Live Application:** Coming soon
+**Live Application:** https://mern-real-time-chat-gamma.vercel.app/
 
 **Repository:**
 https://github.com/Riththika0428/MERN-real-time-chat
